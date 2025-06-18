@@ -8,6 +8,7 @@ const View = () => {
   const { id } = useParams();
   const [status, setStatus] = useState("loading");
   const [data, setdata] = useState(); // 'loading' | 'success' | 'error'
+  const router = useRouter()
 
   useEffect(() => {
     const fetch = async () => {
@@ -16,9 +17,14 @@ const View = () => {
         if (res.data && res.data.data) {
           setdata(res.data.data);
           console.log(res.data);
+          // seteditId(res.data.)
 
           setStatus("success");
-          toast.success("Fetched Data");
+          if (!window._fetchedToastShown) {
+            toast.success("Fetched Data");
+            window._fetchedToastShown = true;
+          }
+
         } else {
           setStatus("error");
           toast.error("No Data Found");
@@ -31,6 +37,19 @@ const View = () => {
     };
     fetch();
   }, [id]);
+  const handleGoBack = () => {
+    // console.log("hi");
+    setStatus("loading")
+    router.push("/")
+
+  }
+  const handleEdit = () => {
+    setStatus("loading")
+    sessionStorage.setItem("editId", id);
+    router.push("/")
+
+
+  }
   const rta = [
     {
       label: "Name",
@@ -72,6 +91,7 @@ const View = () => {
 
   return (
     <>
+
       {status === "loading" && (
         <div
           className="d-flex justify-content-center align-items-center"
@@ -110,10 +130,10 @@ const View = () => {
                   </div>
 
                   <div className="d-flex justify-content-center gap-3 mt-4">
-                    <button className="btn btn-dark px-4">
+                    <button type="button" className="btn btn-dark px-4" onClick={handleGoBack} >
                       ⬅️ Go Back to Form
                     </button>
-                    <button className="btn btn-warning px-4">
+                    <button className="btn btn-warning px-4" onClick={handleEdit}>
                       ✏️ Edit Submission
                     </button>
                   </div>
@@ -483,7 +503,7 @@ const View = () => {
                           <h6 className="fw-bold mb-3">Billing Address:</h6>
 
                           {data.billingAddressChoice ===
-                          "Same as Registered Office Address" ? (
+                            "Same as Registered Office Address" ? (
                             <p className="ps-2">
                               Same as Registered Office Address
                             </p>
@@ -774,7 +794,7 @@ const View = () => {
                             Particulars of the Compliance Officer
                           </h6>
                           {data?.complianceOfficerChoice ===
-                          "Same as Company Secretary" ? (
+                            "Same as Company Secretary" ? (
                             <p className="ps-2 fw-normal">
                               Same as Company Secretary
                             </p>
@@ -1000,13 +1020,13 @@ const View = () => {
                                   <th>Difference if any</th>
                                   <td className="fw-bold text-center text-success">
                                     {data?.equityCapital?.issued?.noOfShares &&
-                                    data?.equityCapital?.paidUp?.noOfShares
+                                      data?.equityCapital?.paidUp?.noOfShares
                                       ? Number(
-                                          data.equityCapital.issued.noOfShares
-                                        ) -
-                                        Number(
-                                          data.equityCapital.paidUp.noOfShares
-                                        )
+                                        data.equityCapital.issued.noOfShares
+                                      ) -
+                                      Number(
+                                        data.equityCapital.paidUp.noOfShares
+                                      )
                                       : "-"}
                                   </td>
                                   <td className="text-muted text-center">-</td>
@@ -1073,8 +1093,8 @@ const View = () => {
                                         <td className="text-muted fw-normal">
                                           {item.date
                                             ? new Date(
-                                                item.date
-                                              ).toLocaleDateString("en-GB")
+                                              item.date
+                                            ).toLocaleDateString("en-GB")
                                             : "-"}
                                         </td>
                                         <td className="text-muted fw-normal">
@@ -1157,15 +1177,15 @@ const View = () => {
                                   <td className="text-muted fw-normal text-center">
                                     {data?.shareholding?.totalShares
                                       ? (
-                                          (Number(
-                                            data.shareholding.promoters
-                                              .sharesHeld || 0
-                                          ) /
-                                            Number(
-                                              data.shareholding.totalShares || 1
-                                            )) *
-                                          100
-                                        ).toFixed(2) + "%"
+                                        (Number(
+                                          data.shareholding.promoters
+                                            .sharesHeld || 0
+                                        ) /
+                                          Number(
+                                            data.shareholding.totalShares || 1
+                                          )) *
+                                        100
+                                      ).toFixed(2) + "%"
                                       : "-"}
                                   </td>
                                 </tr>
@@ -1184,15 +1204,15 @@ const View = () => {
                                   <td className="text-center">
                                     {data?.shareholding?.totalShares
                                       ? (
-                                          (Number(
-                                            data.shareholding.nonPromoters
-                                              .sharesHeld || 0
-                                          ) /
-                                            Number(
-                                              data.shareholding.totalShares || 1
-                                            )) *
-                                          100
-                                        ).toFixed(2) + "%"
+                                        (Number(
+                                          data.shareholding.nonPromoters
+                                            .sharesHeld || 0
+                                        ) /
+                                          Number(
+                                            data.shareholding.totalShares || 1
+                                          )) *
+                                        100
+                                      ).toFixed(2) + "%"
                                       : "-"}
                                   </td>
                                 </tr>

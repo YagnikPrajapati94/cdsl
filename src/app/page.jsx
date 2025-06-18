@@ -1,6 +1,7 @@
 "use client";
 
 import axios from "axios";
+// import { useRouter } from "next/router";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -8,7 +9,29 @@ import { toast } from "react-toastify";
 
 export default function Home() {
   const router = useRouter();
+  const [editId, setEditId] = useState(null);
   const [loading, setloading] = useState(false);
+  useEffect(() => {
+    const editId = sessionStorage.getItem("editId");
+    const fetch = async () => {
+      try {
+        const res = await axios.get(`api/getone/${editId}`)
+        console.log(res);
+        reset(res.data.data)
+        setEditId(editId)
+
+      } catch (error) {
+        console.log(error);
+
+      }
+    }
+
+
+    if (editId) {
+      fetch()
+    }
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -20,6 +43,7 @@ export default function Home() {
     formState: { errors },
   } = useForm({
     defaultValues: {
+      previousNames: [{ name: "", date: "" }],
       cfi: {
         voting: "",
         paymentStatus: "",
@@ -182,39 +206,22 @@ export default function Home() {
     }
   }, [billingAddressChoice]); // 🔁 Only this is necessary
 
-  // useEffect(() => {
-  //   setValue("billingAddressChoice", "Same as Registered Office Address");
-  //   setValue("addressChoice", "same");
-  // }, []);
-
-  const handleAdd = () => {
-    setRows([...rows, { name: "", date: "" }]);
-  };
-
-  const handleRemove = () => {
-    if (rows.length <= 1) return; // Prevent removing the last remaining row
-
-    const lastIndex = rows.length - 1;
-
-    // Unregister only the last row's inputs
-    unregister(`previousNames.${lastIndex}.name`);
-    unregister(`previousNames.${lastIndex}.date`);
-
-    // Remove last row from state
-    const updatedRows = [...rows];
-    updatedRows.pop();
-    setRows(updatedRows);
-  };
 
   const handleForm = async (data) => {
     try {
-      const res = await axios.post("/api/adddata", data);
-      console.log(res.data);
-      setloading(true);
-      router.push(`/View/${res.data.uniqueId}`);
+      if (editId != null) {
+        const res = await axios.put(`/api/edit/${editId}`, data)
+        sessionStorage.removeItem("editId");
+        toast.success("Data Updated Successfully")
+        setloading(true)
+        router.push(`/View/${editId}`);
+      } else {
+        const res = await axios.post("/api/adddata", data);
+        console.log(res.data)
+        router.push(`/View/${res.data.uniqueId}`);
 
-      toast.success("Submited Successfully");
-      // console.log(data);
+        toast.success("Submited Successfully");
+      }
     } catch (error) {
       console.log(error);
       setloading(false);
@@ -341,6 +348,10 @@ export default function Home() {
     control,
     name: "promoters",
   });
+  const { fields: previousNames, append: addPreviousNames, remove: removePreviousNames } = useFieldArray({
+    control,
+    name: "previousNames",
+  });
   return (
     <>
       {loading == true && (
@@ -441,50 +452,52 @@ export default function Home() {
                           <th className="fw-normal">Sr.No</th>
                           <th className="fw-normal">Previous Name</th>
                           <th className="fw-normal">Date of Name Change</th>
+                          <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {rows.map((row, index) => (
-                          <>
-                            <tr key={row.id}>
-                              <td>{index + 1}</td>
-                              <td>
-                                <input
-                                  {...register(`previousNames.${index}.name`)}
-                                  type="text"
-                                  className="form-control shadow-none"
-                                  placeholder="Enter Previous Name"
-                                />
-                              </td>
-                              <td>
-                                <input
-                                  {...register(`previousNames.${index}.date`)}
-                                  type="date"
-                                  className="form-control shadow-none"
-                                />
-                              </td>
-                            </tr>
-                          </>
+                        {previousNames.map((field, index) => (
+                          <tr key={field.id}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <input
+                                {...register(`previousNames.${index}.name`)}
+                                type="text"
+                                className="form-control shadow-none"
+                                placeholder="Enter Previous Name"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                {...register(`previousNames.${index}.date`)}
+                                type="date"
+                                className="form-control shadow-none"
+                              />
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="btn  btn-danger"
+                                onClick={() => removePreviousNames(index)} // ✅ remove specific row
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
                         ))}
                       </tbody>
+
                     </table>
 
                     <button
                       type="button"
-                      className="btn btn-primary rounded-0 shadow-none mb-3"
-                      onClick={handleAdd}
+                      className="btn btn-primary shadow-none mb-3"
+                      onClick={() => addPreviousNames({ name: "", date: "" })}
                     >
                       Add Row
                     </button>
-                    {rows.length > 1 && (
-                      <button
-                        type="button"
-                        className="btn rounded-0 mb-3 ms-2 btn-danger"
-                        onClick={() => handleRemove()}
-                      >
-                        Remove
-                      </button>
-                    )}
+
+
                   </div>
                 </div>
               </li>
@@ -2581,8 +2594,8 @@ export default function Home() {
               </div>
             </div>
             {/* submit button  */}
-            <button className="btn btn-outline-dark form-control shadow-none">
-              Submit
+            <button className={`btn ${editId != null ? 'btn-outline-warning' : 'btn-outline-dark'} form-control shadow-none`}>
+              {editId != null ? 'Update' : 'Submit'}
             </button>
           </form>
         </div>
